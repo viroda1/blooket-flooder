@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepHat | Command Center</title>
+    <style>
+        body { font-family: 'Segoe UI', monospace; background: #0a0a0a; color: #00ff41; text-align: center; padding: 20px; }
+        .container { max-width: 600px; margin: auto; border: 1px solid #00ff41; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px #00ff4155; }
+        input { width: 80%; padding: 12px; background: #111; border: 1px solid #00ff41; color: white; margin-bottom: 20px; outline: none; }
+        .btn-group { margin-bottom: 20px; }
+        button { padding: 12px 25px; font-weight: bold; text-transform: uppercase; cursor: pointer; border: none; margin: 5px; transition: 0.3s; }
+        .start-btn { background: #ff4b2b; color: white; }
+        .start-btn:hover { background: #ff416c; box-shadow: 0 0 15px #ff4b2b; }
+        .stop-btn { background: #00c853; color: white; }
+        .stop-btn:hover { background: #00e676; box-shadow: 0 0 15px #00c853; }
+        #console { background: #000; border: 1px solid #333; height: 150px; overflow-y: scroll; text-align: left; padding: 10px; font-size: 12px; color: #aaa; margin-top: 20px; }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #111; }
+        .log-error { color: #ff4b2b; }
+        .log-success { color: #00ff41; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DEEPHAT v1.1</h1>
+        <p>System Status: <span id="systemStatus">IDLE</span></p>
+        
+        <input type="text" id="targetUrl" placeholder="Enter Target URL (https://...)">
+        
+        <div class="btn-group">
+            <button class="start-btn" onclick="sendCommand('start')">Start Attack</button>
+            <button class="stop-btn" onclick="sendCommand('stop')">Stop Attack</button>
+        </div>
+
+        <div id="console">
+            <div class="log-entry">System initialized. Waiting for command...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5000"; 
+
+        function logToConsole(msg, type = '') {
+            const consoleDiv = document.getElementById('console');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            consoleDiv.prepend(entry);
+        }
+
+        async function sendCommand(action) {
+            const url = document.getElementById('targetUrl').value;
+            const statusText = document.getElementById('systemStatus');
+
+            if (action === 'start' && !url) {
+                logToConsole("Error: No URL provided!", "log-error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    logToConsole(data.message || "Command successful", "log-success");
+                    statusText.innerText = action === 'start' ? "FLOODING" : "IDLE";
+                    statusText.style.color = action === 'start' ? "#ff4b2b" : "#00ff41";
+                } else {
+                    logToConsole(data.error || "Server error", "log-error");
+                }
+
+            } catch (err) {
+                logToConsole("Connection Error: Is Backend running?", "log-error");
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
