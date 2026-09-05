@@ -1,15 +1,29 @@
-# DeepHat Backend Dependencies
+# --- Core Web Framework ---
 flask==3.0.0
 flask-cors==4.0.0
+# Use a stable, well-tested version of requests
 requests==2.31.0
+
+# --- Production Server (WSGI) ---
+# Gunicorn is for Linux/Unix production environments
 gunicorn==21.2.0
 
-# Environment Management
+# --- Environment & Security ---
 python-dotenv==1.0.0
+# Added for safer handling of secrets and configs
+cryptography==41.0.0
 
-# Database (Assuming PostgreSQL)
+# --- Data Validation & Serialization ---
+# Pydantic is excellent for high-performance validation
+pydantic==2.5.3
+# Required for Pydantic to work seamlessly with complex types
+email-validator==2.0.1
+
+# --- Database & ORM (Ready for Scale) ---
+# Only include if you are implementing a persistent state/logs database
 Flask-SQLAlchemy==3.1.1
 psycopg2-binary==2.9.9
 
-# Data Validation
-pydantic==2.5.3
+# --- Testing & Dev Tools ---
+# Essential for debugging your engine logic
+pytest==7.4.3

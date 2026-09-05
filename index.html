@@ -5,78 +5,243 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepHat | Command Center</title>
     <style>
-        body { font-family: 'Segoe UI', monospace; background: #0a0a0a; color: #00ff41; text-align: center; padding: 20px; }
-        .container { max-width: 600px; margin: auto; border: 1px solid #00ff41; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px #00ff4155; }
-        input { width: 80%; padding: 12px; background: #111; border: 1px solid #00ff41; color: white; margin-bottom: 20px; outline: none; }
-        .btn-group { margin-bottom: 20px; }
-        button { padding: 12px 25px; font-weight: bold; text-transform: uppercase; cursor: pointer; border: none; margin: 5px; transition: 0.3s; }
-        .start-btn { background: #ff4b2b; color: white; }
-        .start-btn:hover { background: #ff416c; box-shadow: 0 0 15px #ff4b2b; }
-        .stop-btn { background: #00c853; color: white; }
-        .stop-btn:hover { background: #00e676; box-shadow: 0 0 15px #00c853; }
-        #console { background: #000; border: 1px solid #333; height: 150px; overflow-y: scroll; text-align: left; padding: 10px; font-size: 12px; color: #aaa; margin-top: 20px; }
-        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #111; }
-        .log-error { color: #ff4b2b; }
-        .log-success { color: #00ff41; }
+        :root {
+            --primary: #00ff41;
+            --secondary: #ff4b2b;
+            --bg-dark: #050505;
+            --panel-bg: #0f0f0f;
+            --text-dim: #888;
+            --terminal-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        body { 
+            font-family: var(--terminal-font); 
+            background: var(--bg-dark); 
+            color: var(--primary); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* CRT Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container { 
+            width: 100%;
+            max-width: 700px; 
+            background: var(--panel-bg);
+            border: 1px solid #222; 
+            padding: 40px; 
+            border-radius: 4px; 
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.1); 
+            z-index: 1;
+        }
+
+        h1 { 
+            font-size: 2rem; 
+            letter-spacing: 4px; 
+            margin-top: 0;
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        .status-bar {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            color: var(--text-dim);
+        }
+
+        #systemStatus { font-weight: bold; color: var(--primary); }
+
+        .input-section { margin-bottom: 30px; }
+
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            background: #000; 
+            border: 1px solid #333; 
+            color: var(--primary); 
+            font-family: var(--terminal-font);
+            outline: none; 
+            box-sizing: border-box;
+            transition: border 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        .btn-group { display: flex; gap: 15px; justify-content: center; }
+
+        button { 
+            padding: 12px 30px; 
+            font-family: var(--terminal-font);
+            font-weight: bold; 
+            text-transform: uppercase; 
+            cursor: pointer; 
+            border: none; 
+            transition: all 0.2s ease;
+            letter-spacing: 1px;
+        }
+
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .start-btn { background: var(--secondary); color: white; }
+        .start-btn:hover { background: #ff6b4a; box-shadow: 0 0 20px rgba(255, 75, 43, 0.4); }
+
+        .stop-btn { background: #333; color: #ccc; }
+        .stop-btn:hover { background: #444; color: #fff; }
+
+        #console-wrapper {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .console-header {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        #console { 
+            background: #000; 
+            border: 1px solid #222; 
+            height: 200px; 
+            overflow-y: auto; 
+            padding: 15px; 
+            font-size: 0.85rem; 
+            color: #00ff41; 
+            border-radius: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: #333 #000;
+        }
+
+        /* Custom Scrollbar */
+        #console::-webkit-scrollbar { width: 6px; }
+        #console::-webkit-scrollbar-track { background: #000; }
+        #console::-webkit-scrollbar-thumb { background: #333; }
+
+        .log-entry { margin-bottom: 8px; line-height: 1.4; border-left: 2px solid #222; padding-left: 8px; }
+        .log-error { color: var(--secondary); border-left-color: var(--secondary); }
+        .log-success { color: #00ff41; border-left-color: #00ff41; }
+        .log-info { color: #00d4ff; border-left-color: #00d4ff; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .pulse { animation: pulse 1.5s infinite; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>DEEPHAT v1.1</h1>
-        <p>System Status: <span id="systemStatus">IDLE</span></p>
+        <h1>DEEPHAT <span style="font-size: 0.8rem; vertical-align: middle;">v1.1</span></h1>
+        <div class="status-bar">
+            SYSTEM STATUS: <span id="systemStatus" class="pulse">IDLE</span>
+        </div>
         
-        <input type="text" id="targetUrl" placeholder="Enter Target URL (https://...)">
+        <div class="input-section">
+            <input type="text" id="targetUrl" placeholder="TARGET_URL (e.g., https://example.com)" autocomplete="off">
+        </div>
         
         <div class="btn-group">
-            <button class="start-btn" onclick="sendCommand('start')">Start Attack</button>
-            <button class="stop-btn" onclick="sendCommand('stop')">Stop Attack</button>
+            <button class="start-btn" id="startBtn" onclick="sendCommand('start')">Execute Attack</button>
+            <button class="stop-btn" id="stopBtn" onclick="sendCommand('stop')">Abort</button>
         </div>
 
-        <div id="console">
-            <div class="log-entry">System initialized. Waiting for command...</div>
+        <div id="console-wrapper">
+            <div class="console-header">System Output Log</div>
+            <div id="console">
+                <div class="log-entry">Initializing DeepHat kernel...</div>
+                <div class="log-entry">Connection established. Ready for input.</div>
+            </div>
         </div>
     </div>
 
     <script>
         const API_BASE = "http://localhost:5000"; 
+        const consoleDiv = document.getElementById('console');
+        const statusText = document.getElementById('systemStatus');
+        const startBtn = document.getElementById('startBtn');
 
-        function logToConsole(msg, type = '') {
-            const consoleDiv = document.getElementById('console');
+        function logToConsole(msg, type = 'info') {
             const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            consoleDiv.prepend(entry);
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString([], { hour12: false });
+            entry.innerHTML = `<span>[${timestamp}]</span> ${msg}`;
+            
+            // Append instead of prepend for chronological reading
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function validateUrl(url) {
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === "http:" || parsed.protocol === "https:";
+            } catch {
+                return false;
+            }
         }
 
         async function sendCommand(action) {
-            const url = document.getElementById('targetUrl').value;
-            const statusText = document.getElementById('systemStatus');
-
-            if (action === 'start' && !url) {
-                logToConsole("Error: No URL provided!", "log-error");
-                return;
+            const urlInput = document.getElementById('targetUrl').value.trim();
+            
+            if (action === 'start') {
+                if (!validateUrl(urlInput)) {
+                    logToConsole("CRITICAL: Invalid or insecure URL provided.", "error");
+                    return;
+                }
+                startBtn.disabled = true;
             }
 
             try {
                 const response = await fetch(`${API_BASE}/${action}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url })
+                    body: JSON.stringify({ url: urlInput })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    logToConsole(data.message || "Command successful", "log-success");
-                    statusText.innerText = action === 'start' ? "FLOODING" : "IDLE";
-                    statusText.style.color = action === 'start' ? "#ff4b2b" : "#00ff41";
+                    logToConsole(data.message || `Command ${action.toUpperCase()} sent.`, "success");
+                    updateUIState(action);
                 } else {
-                    logToConsole(data.error || "Server error", "log-error");
+                    throw new Error(data.error || "Server rejected command");
                 }
 
             } catch (err) {
-                logToConsole("Connection Error: Is Backend running?", "log-error");
-                console.error(err);
+                logToConsole(`ERROR: ${err.message}`, "error");
+                updateUIState('stop');
+            } finally {
+                if (action === 'start') startBtn.disabled = false;
+            }
+        }
+
+        function updateUIState(action) {
+            if (action === 'start') {
+                statusText.innerText = "FLOODING";
+                statusText.style.color = "#ff4b2b";
+                statusText.classList.add('pulse');
+                logToConsole("System state changed to ACTIVE.", "info");
+            } else {
+                statusText.innerText = "IDLE";
+                statusText.style.color = "#00ff41";
+                statusText.classList.remove('pulse');
+                logToConsole("System state changed to STANDBY.", "info");
             }
         }
     </script>
