@@ -1,0 +1,55 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepHat Flood Tool</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #0f0f0f; color: #00ff00; text-align: center; padding: 50px; }
+        input { padding: 10px; width: 300px; background: #222; border: 1px solid #00ff00; color: white; margin-bottom: 10px; }
+        button { padding: 10px 20px; cursor: pointer; border: none; margin: 5px; font-weight: bold; }
+        .start-btn { background: #ff4444; color: white; }
+        .stop-btn { background: #44ff44; color: black; }
+        #status { margin-top: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>DeepHat Protocol v1.0</h1>
+    <p>Target URL Input:</p>
+    <input type="text" id="targetUrl" placeholder="https://example.com/host/...">
+    <br>
+    <button class="start-btn" onclick="triggerFlood('start')">START ATTACK</button>
+    <button class="stop-btn" onclick="triggerFlood('stop')">STOP</button>
+    <div id="status">Status: Idle</div>
+
+    <script>
+        const API_BASE = "http://localhost:5000"; // Change this to your deployed backend URL
+
+        async function triggerFlood(action) {
+            const url = document.getElementById('targetUrl').value;
+            const statusDiv = document.getElementById('status');
+
+            if (!url && action === 'start') {
+                alert("Please enter a valid URL");
+                return;
+            }
+
+            try {
+                const endpoint = action === 'start' ? '/start' : '/stop';
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+                statusDiv.innerText = `Status: ${data.message || data.error}`;
+            } catch (err) {
+                statusDiv.innerText = "Status: Connection Error";
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
